@@ -27,14 +27,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       // URL đúng - stonephovaldosta.com-redirect/ được redirect thành root
       const apiUrl = 'https://stonephovaldosta.com/api/upload-image.php';
-      
+
+      console.log('=== UPLOAD START ===');
       console.log('Uploading to:', apiUrl);
       console.log('File info:', {
         name: file.name,
         size: file.size,
         type: file.type
       });
-      
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
@@ -42,25 +43,48 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       });
 
       console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
-      
+      console.log('Response status text:', response.statusText);
+      console.log('Response Content-Type:', response.headers.get('content-type'));
+
+      // Get response text first to see what we actually got
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload error response:', errorText);
-        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+        console.error('Upload error - Status:', response.status);
+        console.error('Upload error - Response:', responseText);
+        throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 200)}`);
       }
 
-      const data = await response.json();
-      console.log('Upload response:', data);
-      
-      if (!data.success) {
-        console.error('Server error:', data);
-        throw new Error(data.message || data.error || 'Upload failed');
+      // Try to parse JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('Parsed JSON response:', data);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response was not valid JSON:', responseText);
+        throw new Error(`Server returned invalid JSON: ${responseText.substring(0, 100)}`);
       }
-      
+
+      if (!data.success) {
+        console.error('Server returned success=false:', data);
+        throw new Error(data.message || data.error || 'Upload failed - server returned success=false');
+      }
+
+      if (!data.imageUrl) {
+        console.error('Server response missing imageUrl:', data);
+        throw new Error('Server response missing imageUrl');
+      }
+
+      console.log('=== UPLOAD SUCCESS ===');
+      console.log('Image URL:', data.imageUrl);
       return data.imageUrl;
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('=== UPLOAD ERROR ===');
+      console.error('Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Full error:', error);
       throw error;
     }
   };
@@ -111,7 +135,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     } catch (error) {
       setIsUploading(false);
       setUploadProgress(0);
-      alert('Lỗi upload hình ảnh. Vui lòng thử lại!');
+
+      // Show detailed error message
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      console.error('Upload failed with error:', errorMessage);
+      console.error('Full error object:', error);
+
+      alert(`Lỗi upload hình ảnh: ${errorMessage}\n\nVui lòng kiểm tra console để biết thêm chi tiết.`);
     }
   };
 
