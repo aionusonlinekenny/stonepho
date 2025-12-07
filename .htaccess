@@ -52,17 +52,21 @@ php_flag file_uploads On
     </FilesMatch>
 </Directory>
 
-# CORS headers for API endpoints
-<FilesMatch "^(api/.*\.php)$">
-    Header always set Access-Control-Allow-Origin "https://stonephovaldosta.com"
-    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
-    Header always set Access-Control-Max-Age "3600"
-</FilesMatch>
+# CORS headers for all PHP endpoints (API, public uploads, etc.)
+<IfModule mod_headers.c>
+    # Set CORS headers for all PHP files
+    <FilesMatch "\.php$">
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        Header always set Access-Control-Max-Age "3600"
+        Header always set Access-Control-Allow-Credentials "false"
+    </FilesMatch>
+</IfModule>
 
 # Handle preflight OPTIONS requests
 RewriteCond %{REQUEST_METHOD} OPTIONS
-RewriteRule ^api/ - [R=200,L]
+RewriteRule ^(.*)$ $1 [R=200,L]
 
 # Security headers
 <IfModule mod_headers.c>
