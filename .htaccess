@@ -4,6 +4,10 @@
 
 RewriteEngine On
 
+# Force HTTPS redirect - must be at top
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
 # Set default index files
 DirectoryIndex index.html index.php
 
@@ -18,19 +22,39 @@ php_value max_input_vars 3000
 # Enable file uploads
 php_flag file_uploads On
 
+# CORS headers - set early to ensure they apply
+<IfModule mod_headers.c>
+    # CORS for PHP API endpoints
+    <FilesMatch "\.php$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+        Header set Access-Control-Max-Age "3600"
+    </FilesMatch>
+
+    # Security headers
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Handle preflight OPTIONS requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
 # Allow uploads directory access
 <Directory "uploads">
     Options -Indexes
     AllowOverride None
     Order Allow,Deny
     Allow from all
-    
+
     # Only allow image files in uploads
     <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg)$">
         Order Allow,Deny
         Allow from all
     </FilesMatch>
-    
+
     # Block PHP execution in uploads directory
     <FilesMatch "\.php$">
         Order Allow,Deny
@@ -44,35 +68,13 @@ php_flag file_uploads On
     AllowOverride None
     Order Allow,Deny
     Allow from all
-    
+
     # Allow PHP files in API directory
     <FilesMatch "\.php$">
         Order Allow,Deny
         Allow from all
     </FilesMatch>
 </Directory>
-
-# CORS and Security Headers
-<IfModule mod_headers.c>
-    # CORS headers for all PHP files
-    <FilesMatch "\.php$">
-        Header set Access-Control-Allow-Origin "*"
-        Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
-        Header set Access-Control-Max-Age "3600"
-    </FilesMatch>
-
-    # Security headers
-    Header set X-Content-Type-Options nosniff
-    Header set X-Frame-Options SAMEORIGIN
-    Header set X-XSS-Protection "1; mode=block"
-    Header set Referrer-Policy "strict-origin-when-cross-origin"
-    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-</IfModule>
-
-# Handle preflight OPTIONS requests
-RewriteCond %{REQUEST_METHOD} OPTIONS
-RewriteRule ^(.*)$ $1 [R=200,L]
 
 # Compression for better performance
 <IfModule mod_deflate.c>
@@ -87,36 +89,26 @@ RewriteRule ^(.*)$ $1 [R=200,L]
     AddOutputFilterByType DEFLATE application/javascript
     AddOutputFilterByType DEFLATE application/x-javascript
     AddOutputFilterByType DEFLATE application/json
-    AddOutputFilterByType DEFLATE image/svg+xml
 </IfModule>
 
 # Browser caching for static assets
 <IfModule mod_expires.c>
     ExpiresActive On
-    
+
     # Images
     ExpiresByType image/jpg "access plus 1 month"
     ExpiresByType image/jpeg "access plus 1 month"
     ExpiresByType image/gif "access plus 1 month"
     ExpiresByType image/png "access plus 1 month"
     ExpiresByType image/webp "access plus 1 month"
-    ExpiresByType image/svg+xml "access plus 1 month"
-    
+
     # CSS and JavaScript
     ExpiresByType text/css "access plus 1 year"
     ExpiresByType application/javascript "access plus 1 year"
-    ExpiresByType application/x-javascript "access plus 1 year"
     ExpiresByType text/javascript "access plus 1 year"
-    
-    # Fonts
-    ExpiresByType font/woff "access plus 1 year"
-    ExpiresByType font/woff2 "access plus 1 year"
-    ExpiresByType application/font-woff "access plus 1 year"
-    ExpiresByType application/font-woff2 "access plus 1 year"
-    
-    # HTML and other text files
+
+    # HTML
     ExpiresByType text/html "access plus 1 hour"
-    ExpiresByType application/json "access plus 1 hour"
 </IfModule>
 
 # Handle React Router (SPA routing)
@@ -133,37 +125,27 @@ RewriteCond %{REQUEST_URI} !^/api/
 # Don't rewrite uploads
 RewriteCond %{REQUEST_URI} !^/uploads/
 
-# Don't rewrite debug/test files
-RewriteCond %{REQUEST_URI} !^/debug
-RewriteCond %{REQUEST_URI} !^/test
+# Don't rewrite PHP files
 RewriteCond %{REQUEST_URI} !\.php$
 
 # Redirect everything else to index.html for React Router
 RewriteRule . /index.html [L]
 
 # Block access to sensitive files
-<FilesMatch "^(\.htaccess|\.htpasswd|\.env|package\.json|package-lock\.json|composer\.json|composer\.lock|\.git)">
+<FilesMatch "^(\.htaccess|\.htpasswd|\.env|package\.json|package-lock\.json|\.git)">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
 
-# Block access to backup and temporary files
-<FilesMatch "\.(bak|backup|old|tmp|temp|log|sql|gz|tar|zip)$">
+# Block access to backup files
+<FilesMatch "\.(bak|backup|old|tmp|log|sql)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
-
-# Prevent directory browsing
-Options -Indexes
 
 # Custom error pages
 ErrorDocument 404 /index.html
-ErrorDocument 403 /index.html
 ErrorDocument 500 /index.html
-
-# Force HTTPS - redirect all HTTP to HTTPS
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # Prevent hotlinking of images
 RewriteCond %{HTTP_REFERER} !^$
