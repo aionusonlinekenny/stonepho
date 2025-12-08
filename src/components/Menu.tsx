@@ -120,7 +120,7 @@ const Menu: React.FC<MenuProps> = ({ deviceInfo, forcedDevice }) => {
         </ScrollAnimatedSection>
 
         {/* Menu Items */}
-        <div className={`grid gap-6 ${isMobileView ? 'grid-cols-1' : isTabletView ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3'}`}>
+        <div className={`grid gap-6 ${isMobileView ? 'grid-cols-1' : isTabletView ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {menuItems[activeCategory as keyof typeof menuItems]?.map((item: any, index: number) => (
             <ScrollAnimatedSection key={index} animation="scaleIn" delay={index * 100}>
               <div className={`relative bg-gray-50 rounded-2xl hover:shadow-lg transition-all duration-300 hover:bg-white border border-transparent hover:border-red-200 overflow-hidden ${isMobileView ? 'p-4' : 'p-6'}`}>
@@ -130,9 +130,9 @@ const Menu: React.FC<MenuProps> = ({ deviceInfo, forcedDevice }) => {
                   <img
                     src={item.image ? item.image : "/uploads/menu/default-placeholder.jpg"}
                     alt={item.name}
-                    className="w-full h-32 object-cover rounded-t-2xl"
+                    className={`w-full object-cover rounded-t-2xl ${isMobileView ? 'h-48' : 'h-56'}`}
                   />
-                  
+
                 </div>
 
                 {/* Tên và giá */}
