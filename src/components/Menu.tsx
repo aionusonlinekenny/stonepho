@@ -151,16 +151,13 @@ const Menu: React.FC<MenuProps> = ({ deviceInfo, forcedDevice }) => {
                 </p>
 
                 {/* Nút đặt hàng */}
-                {/*<div className="mt-4 flex gap-2">
-                  <button 
+                <div className="mt-4">
+                  <button
                     onClick={() => window.open('https://www.clover.com/online-ordering/stone-pho-valdosta', '_blank')}
-                    className={`bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-all duration-300 ${isMobileView ? 'px-3 py-1 text-xs flex-1' : 'px-4 py-2 text-sm flex-1'}`}>
+                    className={`w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-all duration-300 hover:scale-105 ${isMobileView ? 'px-3 py-2 text-sm' : 'px-4 py-2.5 text-sm'}`}>
                     Order Now
                   </button>
-                  <button className={`border border-red-600 text-red-600 hover:bg-orange-600 hover:text-white rounded-lg font-medium transition-all duration-300 ${isMobileView ? 'px-3 py-1 text-xs' : 'px-4 py-2 text-sm'}`}>
-                    ♡
-                  </button>
-                </div>*/}
+                </div>
               </div>
             </ScrollAnimatedSection>
           ))}
